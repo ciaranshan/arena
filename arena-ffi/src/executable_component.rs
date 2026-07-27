@@ -12,6 +12,11 @@ use crate::runtime_args::RuntimeArgConfig;
 #[serde(untagged)]
 pub(crate) enum BuildToolConfig {
     Simple(String),
+    Bazel {
+        bazel: String,
+        #[serde(default)]
+        args: Vec<String>,
+    },
     Custom { command: String, args: Vec<String> },
 }
 
@@ -100,6 +105,10 @@ fn build_tool_from_config(spec: &BuildToolConfig) -> Result<BuildTool, String> {
             "cmake" => Ok(BuildTool::CMake),
             other => Err(format!("unknown build_tool '{other}'")),
         },
+        BuildToolConfig::Bazel { bazel, args } => Ok(BuildTool::Bazel {
+            target: bazel.clone(),
+            args: args.clone(),
+        }),
         BuildToolConfig::Custom { command, args } => Ok(BuildTool::Custom {
             command: command.clone(),
             args: args.clone(),

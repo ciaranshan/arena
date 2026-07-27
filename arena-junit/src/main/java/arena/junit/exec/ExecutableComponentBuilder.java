@@ -42,6 +42,11 @@ public final class ExecutableComponentBuilder {
     return this;
   }
 
+  public ExecutableComponentBuilder withBuildToolBazel(String target, List<String> args) {
+    config.set("build_tool", BuildTool.bazel(target, args));
+    return this;
+  }
+
   public ExecutableComponentBuilder withEnvVar(String key, String value) {
     ((ObjectNode) config.get("env_vars")).put(key, value);
     return this;

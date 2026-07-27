@@ -18,6 +18,10 @@ class BuildTool(Enum):
     def custom(command: str, args: List[str]) -> Dict[str, Any]:
         return {"command": command, "args": args}
 
+    @staticmethod
+    def bazel(target: str, args: Optional[List[str]] = None) -> Dict[str, Any]:
+        return {"bazel": target, "args": args or []}
+
 
 class ExecutableComponentBuilder:
     def __init__(self, name: str = ""):
@@ -43,6 +47,12 @@ class ExecutableComponentBuilder:
 
     def with_build_tool_custom(self, command: str, args: List[str]) -> "ExecutableComponentBuilder":
         self._config["build_tool"] = BuildTool.custom(command, args)
+        return self
+
+    def with_build_tool_bazel(
+        self, target: str, args: Optional[List[str]] = None
+    ) -> "ExecutableComponentBuilder":
+        self._config["build_tool"] = BuildTool.bazel(target, args)
         return self
 
     def with_env_var(self, key: str, value: str) -> "ExecutableComponentBuilder":

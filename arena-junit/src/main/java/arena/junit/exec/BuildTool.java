@@ -23,6 +23,17 @@ public enum BuildTool {
     return value;
   }
 
+  public static ObjectNode bazel(String target, List<String> args) {
+    ObjectNode n = ArenaJson.object();
+    n.put("bazel", target);
+    ArrayNode a = ArenaJson.array();
+    for (String x : args) {
+      a.add(x);
+    }
+    n.set("args", a);
+    return n;
+  }
+
   public static ObjectNode customBuild(String command, List<String> args) {
     ObjectNode n = ArenaJson.object();
     n.put("command", command);
