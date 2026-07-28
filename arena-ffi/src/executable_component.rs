@@ -115,3 +115,40 @@ fn build_tool_from_config(spec: &BuildToolConfig) -> Result<BuildTool, String> {
         }),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn build_tool_config_bazel_deserializes_bazel_field_as_target() {
+        let config: BuildToolConfig = serde_json::from_str(
+            r#"{"bazel": "//foo:bar", "args": ["--config=ci"]}"#,
+        )
+        .expect("valid build_tool config");
+
+        match config {
+            BuildToolConfig::Bazel { bazel, args } => {
+                assert_eq!(bazel, "//foo:bar");
+                assert_eq!(args, vec!["--config=ci".to_string()]);
+            }
+            other => panic!("expected BuildToolConfig::Bazel, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn build_tool_from_config_bazel_returns_build_tool_bazel() {
+        let config = BuildToolConfig::Bazel {
+            bazel: "//foo:bar".to_string(),
+            args: vec!["--config=ci".to_string()],
+        };
+
+        match build_tool_from_config(&config).expect("valid build tool") {
+            BuildTool::Bazel { target, args } => {
+                assert_eq!(target, "//foo:bar");
+                assert_eq!(args, vec!["--config=ci".to_string()]);
+            }
+            _ => panic!("expected BuildTool::Bazel"),
+        }
+    }
+}
