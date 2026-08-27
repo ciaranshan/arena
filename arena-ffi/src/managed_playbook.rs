@@ -2,12 +2,14 @@ use arena::Playbook;
 use arena_http::{ManagedHttpPlaybook, Playbook as HttpPlaybook};
 use arena_localstack::ManagedLocalstackPlaybook;
 use arena_mssql::ManagedMssqlPlaybook;
+use arena_oracledb::ManagedOraclePlaybook;
+use arena_postgres::ManagedPostgresPlaybook;
 use serde::Deserialize;
 
 use crate::dependency::http::mapping::{build_playbook_from_mappings, MappingSpec};
 
 #[derive(Debug, Clone, Deserialize)]
-pub(crate) struct ManagedPlaybookConfig {
+pub struct ManagedPlaybookConfig {
     pub identifier: String,
     #[serde(default = "default_exec_on_dependency_start")]
     pub exec_on_dependency_start: bool,
@@ -21,10 +23,14 @@ fn default_exec_on_dependency_start() -> bool {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
-pub(crate) enum PlaybookKindConfig {
+#[allow(private_interfaces)]
+pub enum PlaybookKindConfig {
     Http(HttpPlaybookConfig),
     Mssql(MssqlPlaybookConfig),
+    #[serde(rename = "oracledb")]
+    Oracle(OraclePlaybookConfig),
     Localstack(LocalstackPlaybookConfig),
+    Postgres(PostgresPlaybookConfig),
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -39,11 +45,21 @@ pub(crate) struct MssqlPlaybookConfig {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub(crate) struct OraclePlaybookConfig {
+    pub dependency_identifier: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub(crate) struct LocalstackPlaybookConfig {
     pub dependency_identifier: String,
 }
 
-pub(crate) fn build(config: ManagedPlaybookConfig) -> Box<dyn Playbook> {
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct PostgresPlaybookConfig {
+    pub dependency_identifier: String,
+}
+
+pub fn build(config: ManagedPlaybookConfig) -> Box<dyn Playbook> {
     match config.kind {
         PlaybookKindConfig::Http(http) => Box::new(ManagedHttpPlaybook::new(
             config.identifier,
@@ -54,9 +70,17 @@ pub(crate) fn build(config: ManagedPlaybookConfig) -> Box<dyn Playbook> {
             config.identifier,
             mssql.dependency_identifier,
         )),
+        PlaybookKindConfig::Oracle(oracle) => Box::new(ManagedOraclePlaybook::new(
+            config.identifier,
+            oracle.dependency_identifier,
+        )),
         PlaybookKindConfig::Localstack(localstack) => Box::new(ManagedLocalstackPlaybook::new(
             config.identifier,
             localstack.dependency_identifier,
+        )),
+        PlaybookKindConfig::Postgres(postgres) => Box::new(ManagedPostgresPlaybook::new(
+            config.identifier,
+            postgres.dependency_identifier,
         )),
     }
 }

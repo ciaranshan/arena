@@ -8,17 +8,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import arena.examples.testruntime.EphemeralTestRuntime;
-import arena.junit.match.ArenaMatchPiece;
+import arena.junit.ffi.ArenaLogLevel;
+import arena.junit.ffi.ArenaLogbackFlush;
 import arena.junit.oauth.OauthDependency;
 import arena.junit.oauth.OauthDependencyBuilder;
 import arena.junit.oauth.OauthLoopbackTls;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.lang.annotation.Annotation;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -26,24 +27,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExecutableInvoker;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.TestInstances;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 final class ArenaExtensionLifecycleComponentTest {
 
   private static final EphemeralTestRuntime RT = EphemeralTestRuntime.get();
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
-  static final class StubMatchPiece implements ArenaMatchPiece {
-    @Override
-    public ObjectNode forFfi() {
-      return MAPPER.createObjectNode();
-    }
-  }
 
   abstract static class SharedTopology {
     static int afterOpenCount;
@@ -68,26 +61,38 @@ final class ArenaExtensionLifecycleComponentTest {
 
   static final class SecondConsumer extends MiddleLayer {}
 
-  static final class NoArenaFieldsTopology {}
-
-  static final class NonStaticDependencyFieldTopology {
-    @ArenaDependency final StubMatchPiece dependency = new StubMatchPiece();
+  static final class SuiteDefs {
+    @ArenaDependency
+    static final OauthDependency oauth =
+        buildOauth("arena-extension-suite-defs-oauth", EphemeralTestRuntime.ephemeralTcpPort());
   }
 
-  static final class TwoDependenciesSameTypeTopology {
-    @ArenaDependency static final StubMatchPiece first = new StubMatchPiece();
-    @ArenaDependency static final StubMatchPiece second = new StubMatchPiece();
+  @Arena(SuiteDefs.class)
+  static final class SuiteMemberA {}
+
+  @Arena(SuiteDefs.class)
+  static final class SuiteMemberB {}
+
+  static final class EmptySuiteDefs {}
+
+  @Arena(EmptySuiteDefs.class)
+  static final class SuiteMemberMissingFields {}
+
+  static final class UnrelatedSelectedClass {}
+
+  @Suite
+  @SelectClasses(UnrelatedSelectedClass.class)
+  static final class MismatchedSuiteDefs {
+    @ArenaDependency
+    static final OauthDependency oauth =
+        buildOauth("arena-extension-mismatched-suite-oauth", EphemeralTestRuntime.ephemeralTcpPort());
   }
 
-  static final class DuplicateLoggerFieldTopology {
-    @ArenaDependency static final StubMatchPiece dependency = new StubMatchPiece();
+  @Arena(MismatchedSuiteDefs.class)
+  static final class MismatchedMemberA {}
 
-    @ArenaLogger
-    static final Logger FIRST = LoggerFactory.getLogger(DuplicateLoggerFieldTopology.class);
-
-    @ArenaLogger
-    static final Logger SECOND = LoggerFactory.getLogger(DuplicateLoggerFieldTopology.class);
-  }
+  @Arena(MismatchedSuiteDefs.class)
+  static final class MismatchedMemberB {}
 
   static final class NonStaticAfterOpenTopology {
     @ArenaDependency
@@ -119,6 +124,28 @@ final class ArenaExtensionLifecycleComponentTest {
 
     @ArenaAfterOpen
     static void second() {}
+  }
+
+  static final class DependencyLogsEnabledTopology {
+    static final String OAUTH_IDENTIFIER = "arena-extension-dependency-logs-enabled-oauth";
+
+    @ArenaDependency(logs = true)
+    static final OauthDependency oauth =
+        buildOauth(OAUTH_IDENTIFIER, EphemeralTestRuntime.ephemeralTcpPort());
+
+    @ArenaLogger(level = ArenaLogLevel.DEBUG)
+    static final Logger LOG = LoggerFactory.getLogger(DependencyLogsEnabledTopology.class);
+  }
+
+  static final class DependencyLogsDisabledTopology {
+    static final String OAUTH_IDENTIFIER = "arena-extension-dependency-logs-disabled-oauth";
+
+    @ArenaDependency
+    static final OauthDependency oauth =
+        buildOauth(OAUTH_IDENTIFIER, EphemeralTestRuntime.ephemeralTcpPort());
+
+    @ArenaLogger(level = ArenaLogLevel.DEBUG)
+    static final Logger LOG = LoggerFactory.getLogger(DependencyLogsDisabledTopology.class);
   }
 
   private static OauthDependency buildOauth(String identifier, int port) {
@@ -155,23 +182,53 @@ final class ArenaExtensionLifecycleComponentTest {
   }
 
   @Test
-  void beforeAll_noArenaAnnotatedFields_throwsIllegalStateException() {
+  void beforeAll_unrelatedClassesReferencingSameArenaViaExplicitValue_opensOnceAndReuses() {
     ArenaExtension extension = new ArenaExtension();
-    IllegalStateException error =
-        assertThrows(
-            IllegalStateException.class,
-            () -> extension.beforeAll(contextFor(NoArenaFieldsTopology.class)));
-    assertTrue(error.getMessage().contains("@ArenaDependency"));
+
+    extension.beforeAll(contextFor(SuiteMemberA.class));
+    OpenArena first = ArenaExtension.openArenaFor(SuiteMemberA.class);
+    assertNotNull(first);
+    assertTrue(first.handle() != null);
+
+    extension.beforeAll(contextFor(SuiteMemberB.class));
+    OpenArena second = ArenaExtension.openArenaFor(SuiteMemberB.class);
+    assertSame(first, second);
+
+    extension.afterAll(contextFor(SuiteMemberA.class));
+    assertNotNull(first.handle());
+
+    extension.afterAll(contextFor(SuiteMemberB.class));
+    assertNull(first.handle());
   }
 
   @Test
-  void beforeAll_nonStaticDependencyField_throwsIllegalStateException() {
+  void beforeAll_suiteRootSelectClassesDoesNotNameExplicitMembers_fallsBackToRefCountingInsteadOfClosingEarly() {
+    ArenaExtension extension = new ArenaExtension();
+
+    extension.beforeAll(contextFor(MismatchedMemberA.class));
+    extension.beforeAll(contextFor(MismatchedMemberB.class));
+    OpenArena opened = ArenaExtension.openArenaFor(MismatchedMemberA.class);
+    assertNotNull(opened.handle());
+
+    extension.afterAll(contextFor(MismatchedMemberA.class));
+    assertNotNull(
+        opened.handle(),
+        "arena must stay open for MismatchedMemberB even though @SelectClasses on "
+            + "MismatchedSuiteDefs does not name either explicit member");
+
+    extension.afterAll(contextFor(MismatchedMemberB.class));
+    assertNull(opened.handle());
+  }
+
+  @Test
+  void beforeAll_explicitValueReferencesClassWithNoArenaFields_throwsIllegalStateException() {
     ArenaExtension extension = new ArenaExtension();
     IllegalStateException error =
         assertThrows(
             IllegalStateException.class,
-            () -> extension.beforeAll(contextFor(NonStaticDependencyFieldTopology.class)));
-    assertTrue(error.getMessage().contains("must be static"));
+            () -> extension.beforeAll(contextFor(SuiteMemberMissingFields.class)));
+    assertTrue(error.getMessage().contains(EmptySuiteDefs.class.getName()));
+    assertTrue(error.getMessage().contains(SuiteMemberMissingFields.class.getName()));
   }
 
   @Test
@@ -206,73 +263,85 @@ final class ArenaExtensionLifecycleComponentTest {
   }
 
   @Test
-  void beforeAll_duplicateLoggerFields_throwsIllegalStateException() {
+  void beforeAll_dependencyLogsEnabled_forwardsDependencyTaggedDebugLog() {
     ArenaExtension extension = new ArenaExtension();
-    IllegalStateException error =
-        assertThrows(
-            IllegalStateException.class,
-            () -> extension.beforeAll(contextFor(DuplicateLoggerFieldTopology.class)));
-    assertTrue(error.getMessage().contains("@ArenaLogger"));
+    ListAppender<ILoggingEvent> capture = attachCapture(DependencyLogsEnabledTopology.class);
+    try {
+      extension.beforeAll(contextFor(DependencyLogsEnabledTopology.class));
+      ArenaLogbackFlush.flushIfPresent();
+      assertTrue(
+          capture.list.stream()
+              .anyMatch(
+                  ev ->
+                      safeMessage(ev).contains(DependencyLogsEnabledTopology.OAUTH_IDENTIFIER)
+                          && safeMessage(ev).contains("starting")),
+          capture.list::toString);
+    } finally {
+      extension.afterAll(contextFor(DependencyLogsEnabledTopology.class));
+      detachCapture(DependencyLogsEnabledTopology.class, capture);
+    }
   }
 
   @Test
-  void supportsParameter_ambiguousFieldType_throwsParameterResolutionException() {
+  void beforeAll_dependencyLogsDisabled_dependencyTaggedDebugLogNotForwarded() {
     ArenaExtension extension = new ArenaExtension();
-    ExtensionContext context = contextFor(TwoDependenciesSameTypeTopology.class);
-    ParameterContext parameterContext = parameterContextFor(StubMatchPiece.class);
-    assertThrows(
-        ParameterResolutionException.class,
-        () -> extension.supportsParameter(parameterContext, context));
+    ListAppender<ILoggingEvent> capture = attachCapture(DependencyLogsDisabledTopology.class);
+    try {
+      extension.beforeAll(contextFor(DependencyLogsDisabledTopology.class));
+      ArenaLogbackFlush.flushIfPresent();
+      assertTrue(
+          capture.list.stream()
+              .noneMatch(
+                  ev ->
+                      safeMessage(ev).contains(DependencyLogsDisabledTopology.OAUTH_IDENTIFIER)
+                          && safeMessage(ev).contains("starting")),
+          capture.list::toString);
+    } finally {
+      extension.afterAll(contextFor(DependencyLogsDisabledTopology.class));
+      detachCapture(DependencyLogsDisabledTopology.class, capture);
+    }
   }
 
   private static ExtensionContext contextFor(Class<?> testClass) {
     return new MinimalExtensionContext(testClass);
   }
 
-  private static ParameterContext parameterContextFor(Class<?> parameterType) {
-    Method method;
-    try {
-      method = ParameterHolder.class.getDeclaredMethod("accept", parameterType);
-    } catch (NoSuchMethodException e) {
-      throw new IllegalStateException(e);
-    }
-    Method finalMethod = method;
-    return new ParameterContext() {
-      @Override
-      public Parameter getParameter() {
-        return finalMethod.getParameters()[0];
-      }
-
-      @Override
-      public int getIndex() {
-        return 0;
-      }
-
-      @Override
-      public Optional<Object> getTarget() {
-        return Optional.empty();
-      }
-
-      @Override
-      public boolean isAnnotated(Class<? extends Annotation> annotationType) {
-        return false;
-      }
-
-      @Override
-      public <A extends Annotation> Optional<A> findAnnotation(Class<A> annotationType) {
-        return Optional.empty();
-      }
-
-      @Override
-      public <A extends Annotation> List<A> findRepeatableAnnotations(Class<A> annotationType) {
-        return List.of();
-      }
-    };
+  private static ListAppender<ILoggingEvent> attachCapture(Class<?> loggerOwner) {
+    ListAppender<ILoggingEvent> capture = new ListAppender<>();
+    capture.setContext(backlogContext());
+    capture.setName("capture-" + loggerOwner.getSimpleName() + "-" + Objects.hash(loggerOwner));
+    capture.start();
+    backlogLogger(loggerOwner).addAppender(capture);
+    return capture;
   }
 
-  private static final class ParameterHolder {
-    @SuppressWarnings("unused")
-    void accept(StubMatchPiece value) {}
+  private static void detachCapture(Class<?> loggerOwner, ListAppender<ILoggingEvent> capture) {
+    capture.stop();
+    backlogLogger(loggerOwner).detachAppender(capture);
+  }
+
+  private static ch.qos.logback.classic.Logger backlogLogger(Class<?> loggerOwner) {
+    Logger facade = LoggerFactory.getLogger(loggerOwner);
+    if (!(facade instanceof ch.qos.logback.classic.Logger)) {
+      throw new AssertionError("org.slf4j.Logger must bridge to Logback classic Logger here");
+    }
+    return (ch.qos.logback.classic.Logger) facade;
+  }
+
+  private static LoggerContext backlogContext() {
+    if (!(LoggerFactory.getILoggerFactory() instanceof LoggerContext)) {
+      throw new AssertionError("Logback LoggerContext expected on test classpath");
+    }
+    return (LoggerContext) LoggerFactory.getILoggerFactory();
+  }
+
+  private static String safeMessage(ILoggingEvent ev) {
+    String formatted = ev.getFormattedMessage();
+    if (formatted != null && !formatted.isEmpty()) {
+      return formatted;
+    }
+    String raw = ev.getMessage();
+    return raw != null ? raw : "";
   }
 
   private static final class MinimalExtensionContext implements ExtensionContext {

@@ -1,6 +1,6 @@
-use arena::dependency::RunnableDependency;
+use arena::dependency::{Dependency, RunnableDependency};
 use arena::healthcheck::ReadinessCheck;
-use arena_smtp::{SmtpDependency, SmtpImpl};
+use arena_smtp::{SmtpDependency, SmtpImpl, SmtpTlsConfig};
 use async_trait::async_trait;
 use futures::FutureExt;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -28,6 +28,7 @@ impl SmtpImpl for FakeSmtpImpl {
         _image_name: &str,
         _image_tag: &str,
         _container_name: &str,
+        _tls: Option<&SmtpTlsConfig>,
     ) {
         self.smtp_address = Some("127.0.0.1:1025".to_string());
         self.http_api_url = Some("http://127.0.0.1:8025".to_string());
@@ -201,6 +202,7 @@ impl SmtpImpl for RetryingSmtpImpl {
         _image_name: &str,
         _image_tag: &str,
         _container_name: &str,
+        _tls: Option<&SmtpTlsConfig>,
     ) {
     }
 
@@ -330,6 +332,12 @@ impl RunnableDependency for RecordingChild {
     async fn hard_reset(&mut self) {}
 
     fn add_child(&mut self, _dep: Box<dyn RunnableDependency>) {}
+    fn children(&self) -> &[Dependency] {
+        &[]
+    }
+    fn children_mut(&mut self) -> &mut [Dependency] {
+        &mut []
+    }
 }
 
 #[tokio::test]
@@ -344,9 +352,14 @@ async fn add_child_appends_and_lifecycle_includes_it() {
         .with_readiness_check(AlwaysOkReadinessCheck)
         .build();
 
+    assert!(dep.children().is_empty());
+
     dep.add_child(Box::new(RecordingChild {
         events: child_events.clone(),
     }));
+
+    assert_eq!(dep.children().len(), 1);
+    assert_eq!(dep.children_mut().len(), 1);
 
     dep.start().await;
     dep.stop().await;

@@ -26,8 +26,11 @@ from arena_pytest.playbook import (
     ActiveHttpPlaybook,
     ActiveLocalstackPlaybook,
     ActiveMssqlPlaybook,
+    ActiveOraclePlaybook,
     ActivePlaybook,
+    ManagedPlaybook,
     Playbook,
+    UnmanagedPlaybook,
     playbook,
 )
 from arena_pytest.dep.http import (
@@ -84,9 +87,19 @@ from arena_pytest.oauth import (
     oauth_issuer_host_is_non_loopback,
     oauth_loopback_tls_pem_pair,
 )
-from arena_pytest.dep.postgres import PostgresDependency, PostgresDependencyBuilder
+from arena_pytest.dep.oracle import (
+    ManagedOraclePlaybook,
+    OracleDependency,
+    OracleDependencyBuilder,
+)
+from arena_pytest.dep.postgres import (
+    ManagedPostgresPlaybook,
+    PostgresDependency,
+    PostgresDependencyBuilder,
+)
+from arena_pytest.dep.smtp import SmtpDependency, SmtpDependencyBuilder
 from arena_pytest.dep.temporal import TemporalDependency, TemporalDependencyBuilder
-from arena_pytest.readiness import HttpReadinessCheck, ReadinessCheck
+from arena_pytest.readiness import HttpReadinessCheck, ReadinessCheck, TcpReadinessCheck
 
 __all__ = [
     "ArenaBindingError",
@@ -120,10 +133,13 @@ __all__ = [
     "ActiveHttpPlaybook",
     "ActiveLocalstackPlaybook",
     "ActiveMssqlPlaybook",
+    "ActiveOraclePlaybook",
     "ActivePlaybook",
     "ManagedHttpPlaybook",
     "ManagedMssqlPlaybook",
+    "ManagedPlaybook",
     "Playbook",
+    "UnmanagedPlaybook",
     "KAFKA_INTERNAL_DOCKER_PORT",
     "KafkaDependency",
     "KafkaDependencyBuilder",
@@ -151,11 +167,18 @@ __all__ = [
     "OauthDependencyBuilder",
     "oauth_issuer_host_is_non_loopback",
     "oauth_loopback_tls_pem_pair",
+    "ManagedOraclePlaybook",
+    "OracleDependency",
+    "OracleDependencyBuilder",
+    "ManagedPostgresPlaybook",
     "PostgresDependency",
     "PostgresDependencyBuilder",
     "TemporalDependency",
     "TemporalDependencyBuilder",
+    "SmtpDependency",
+    "SmtpDependencyBuilder",
     "HttpReadinessCheck",
+    "TcpReadinessCheck",
     "ReadinessCheck",
     "arena",
     "arena_ffi",

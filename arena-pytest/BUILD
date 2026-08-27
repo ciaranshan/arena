@@ -24,7 +24,7 @@ ARENA_PYTEST_CLASSIFIERS = [
 ]
 
 exports_files(
-    ["README.md", "LICENSE", "requirements.txt", "requirements_lock.txt"],
+    ["LICENSE", "requirements.txt", "requirements_lock.txt", "requirements_windows.txt", "pyproject.toml"],
     visibility = ["//visibility:public"],
 )
 
@@ -32,7 +32,9 @@ compile_pip_requirements(
     name = "pip_requirements",
     src = "requirements.txt",
     requirements_txt = "requirements_lock.txt",
-    generate_hashes = False,
+    requirements_windows = "requirements_windows.txt",
+    generate_hashes = True,
+    tags = ["no-windows"],
 )
 
 config_setting(
@@ -69,20 +71,26 @@ config_setting(
 
 copy_file(
     name = "arena_ffi_shared_for_wheel_linux",
-    src = "//arena-ffi:arena_ffi_shared",
+    src = "prebuilt/linux-x86-64/libarena_ffi_shared.so",
     out = "src/arena_pytest/libarena_ffi_shared.so",
+    tags = ["manual"],
 )
 
 copy_file(
     name = "arena_ffi_shared_for_wheel_macos",
-    src = "//arena-ffi:arena_ffi_shared",
+    src = select({
+        ":macos_aarch64": "prebuilt/darwin-aarch64/libarena_ffi_shared.dylib",
+        ":macos_x86_64": "prebuilt/darwin-x86-64/libarena_ffi_shared.dylib",
+    }),
     out = "src/arena_pytest/libarena_ffi_shared.dylib",
+    tags = ["manual"],
 )
 
 copy_file(
     name = "arena_ffi_shared_for_wheel_windows",
-    src = "//arena-ffi:arena_ffi_shared",
+    src = "prebuilt/windows-x86-64/arena_ffi_shared.dll",
     out = "src/arena_pytest/arena_ffi_shared.dll",
+    tags = ["manual"],
 )
 
 alias(
@@ -93,6 +101,7 @@ alias(
         "@platforms//os:windows": ":arena_ffi_shared_for_wheel_windows",
         "//conditions:default": ":arena_ffi_shared_for_wheel_linux",
     }),
+    tags = ["manual"],
 )
 
 py_library(
@@ -118,6 +127,39 @@ py_test(
         ":arena_pytest_lib",
         "@pip//pytest",
     ],
+    python_version = "PY3",
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "playbook_timing_component_test",
+    size = "medium",
+    srcs = glob(["tests/component/playbooks/*.py"]),
+    main = "tests/component/playbooks/playbook_timing_component_test.py",
+    imports = ["tests/component/playbooks"],
+    data = ["//arena-ffi:arena_ffi_shared"],
+    deps = [
+        ":arena_pytest_lib",
+        "@pip//pytest",
+        "@pip//pytest_asyncio",
+    ],
+    tags = ["component_test"],
+    python_version = "PY3",
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "children_lifecycle_component_test",
+    size = "small",
+    srcs = glob(["tests/component/children/*.py"]),
+    main = "tests/component/children/children_lifecycle_component_test.py",
+    imports = ["tests/component/children"],
+    data = ["//arena-ffi:arena_ffi_shared"],
+    deps = [
+        ":arena_pytest_lib",
+        "@pip//pytest",
+    ],
+    tags = ["component_test"],
     python_version = "PY3",
     visibility = ["//visibility:public"],
 )
@@ -150,14 +192,14 @@ py_wheel(
     strip_path_prefixes = ["arena-pytest/src"],
     author = "David Pope",
     classifiers = ARENA_PYTEST_CLASSIFIERS,
-    description_file = "DESCRIPTION.md",
+    description_file = "//:README.md",
     description_content_type = "text/markdown",
     homepage = "https://github.com/daveepope/arena",
     license = "MIT",
     project_urls = {
         "Repository": "https://github.com/daveepope/arena",
         "Issues": "https://github.com/daveepope/arena/issues",
-        "Changelog": "https://github.com/daveepope/arena/releases",
+        "Changelog": "https://github.com/daveepope/arena/blob/master/CHANGELOG.md",
     },
     summary = "pytest API and fixtures for Arena (via the C FFI)",
     requires = [
@@ -174,5 +216,6 @@ py_wheel(
         ":arena_ffi_shared_for_wheel",
         ":arena_pytest_version_synced",
     ],
+    tags = ["manual"],
     visibility = ["//visibility:public"],
 )

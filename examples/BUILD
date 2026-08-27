@@ -2,7 +2,372 @@ load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
+load("@rules_dotnet//dotnet:defs.bzl", "csharp_library", "csharp_binary", "csharp_test", "import_library")
 load("@crates//:defs.bzl", "all_crate_deps")
+
+import_library(
+    name = "xunit_assert_lib",
+    library_name = "xunit.assert",
+    libs = ["@xunit_assert//:libs"],
+    refs = ["@xunit_assert//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "xunit_abstractions_lib",
+    library_name = "xunit.abstractions",
+    libs = ["@xunit_abstractions//:libs"],
+    refs = ["@xunit_abstractions//:refs"],
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "xunit_execution_netstandard",
+    srcs = ["@xunit_extensibility//:lib/netstandard1.1/xunit.execution.dotnet.dll"],
+)
+
+import_library(
+    name = "xunit_extensibility_lib",
+    library_name = "xunit.execution.dotnet",
+    libs = [":xunit_execution_netstandard"],
+    refs = [":xunit_execution_netstandard"],
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "xunit_runner_utility_netstandard",
+    srcs = ["@xunit_runner_utility//:lib/netstandard1.5/xunit.runner.utility.netstandard15.dll"],
+)
+
+import_library(
+    name = "xunit_runner_utility_lib",
+    library_name = "xunit.runner.utility.netstandard15",
+    libs = [":xunit_runner_utility_netstandard"],
+    refs = [":xunit_runner_utility_netstandard"],
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "xunit_runner_reporters_netstandard",
+    srcs = ["@xunit_runner_reporters//:lib/netstandard1.1/xunit.runner.reporters.netstandard11.dll"],
+)
+
+import_library(
+    name = "xunit_runner_reporters_lib",
+    library_name = "xunit.runner.reporters.netstandard11",
+    libs = [":xunit_runner_reporters_netstandard"],
+    refs = [":xunit_runner_reporters_netstandard"],
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "xunit_core_netstandard",
+    srcs = ["@xunit_extensibility_core//:lib/netstandard1.1/xunit.core.dll"],
+)
+
+import_library(
+    name = "xunit_extensibility_core_lib",
+    library_name = "xunit.core",
+    libs = [":xunit_core_netstandard"],
+    refs = [":xunit_core_netstandard"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "newtonsoft_json_lib",
+    library_name = "Newtonsoft.Json",
+    libs = ["@newtonsoft_json//:libs"],
+    refs = ["@newtonsoft_json//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_logging_abstractions_lib",
+    library_name = "Microsoft.Extensions.Logging.Abstractions",
+    libs = ["@ms_logging_abstractions//:libs"],
+    refs = ["@ms_logging_abstractions//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_logging_lib",
+    library_name = "Microsoft.Extensions.Logging",
+    libs = ["@ms_logging//:libs"],
+    refs = ["@ms_logging//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_logging_options_lib",
+    library_name = "Microsoft.Extensions.Options",
+    libs = ["@ms_logging_options//:libs"],
+    refs = ["@ms_logging_options//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_logging_configuration_lib",
+    library_name = "Microsoft.Extensions.Logging.Configuration",
+    libs = ["@ms_logging_configuration//:libs"],
+    refs = ["@ms_logging_configuration//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_logging_options_configuration_extensions_lib",
+    library_name = "Microsoft.Extensions.Options.ConfigurationExtensions",
+    libs = ["@ms_logging_options_configuration_extensions//:libs"],
+    refs = ["@ms_logging_options_configuration_extensions//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_primitives_lib",
+    library_name = "Microsoft.Extensions.Primitives",
+    libs = ["@ms_extensions_primitives//:libs"],
+    refs = ["@ms_extensions_primitives//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_logging_console_lib",
+    library_name = "Microsoft.Extensions.Logging.Console",
+    libs = ["@ms_logging_console//:libs"],
+    refs = ["@ms_logging_console//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "npgsql_lib",
+    library_name = "Npgsql",
+    libs = ["@npgsql//:libs"],
+    refs = ["@npgsql//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "sqlclient_lib",
+    library_name = "Microsoft.Data.SqlClient",
+    libs = ["@sqlclient//:libs"],
+    refs = ["@sqlclient//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "oracle_manageddataaccess_core_lib",
+    library_name = "Oracle.ManagedDataAccess.Core",
+    libs = ["@oracle_manageddataaccess_core//:libs"],
+    refs = ["@oracle_manageddataaccess_core//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "aws_core_lib",
+    library_name = "AWSSDK.Core",
+    libs = ["@aws_core//:libs"],
+    refs = ["@aws_core//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "aws_eventbridge_lib",
+    library_name = "AWSSDK.EventBridge",
+    libs = ["@aws_eventbridge//:libs"],
+    refs = ["@aws_eventbridge//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "aws_sqs_lib",
+    library_name = "AWSSDK.SQS",
+    libs = ["@aws_sqs//:libs"],
+    refs = ["@aws_sqs//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "polly_lib",
+    library_name = "Polly",
+    libs = ["@polly//:libs"],
+    refs = ["@polly//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "polly_core_lib",
+    library_name = "Polly.Core",
+    libs = ["@polly_core//:libs"],
+    refs = ["@polly_core//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "jwt_lib",
+    library_name = "System.IdentityModel.Tokens.Jwt",
+    libs = ["@jwt//:libs"],
+    refs = ["@jwt//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_identitymodel_tokens_lib",
+    library_name = "Microsoft.IdentityModel.Tokens",
+    libs = ["@ms_identitymodel_tokens//:libs"],
+    refs = ["@ms_identitymodel_tokens//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_identitymodel_jsonwebtokens_lib",
+    library_name = "Microsoft.IdentityModel.JsonWebTokens",
+    libs = ["@ms_identitymodel_jsonwebtokens//:libs"],
+    refs = ["@ms_identitymodel_jsonwebtokens//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_identitymodel_logging_lib",
+    library_name = "Microsoft.IdentityModel.Logging",
+    libs = ["@ms_identitymodel_logging//:libs"],
+    refs = ["@ms_identitymodel_logging//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_identitymodel_abstractions_lib",
+    library_name = "Microsoft.IdentityModel.Abstractions",
+    libs = ["@ms_identitymodel_abstractions//:libs"],
+    refs = ["@ms_identitymodel_abstractions//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "system_configuration_configurationmanager_lib",
+    library_name = "System.Configuration.ConfigurationManager",
+    libs = ["@system_configuration_configurationmanager//:libs"],
+    refs = ["@system_configuration_configurationmanager//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_identity_client_lib",
+    library_name = "Microsoft.Identity.Client",
+    libs = ["@ms_identity_client//:libs"],
+    refs = ["@ms_identity_client//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_sqlserver_server_lib",
+    library_name = "Microsoft.SqlServer.Server",
+    libs = ["@ms_sqlserver_server//:libs"],
+    refs = ["@ms_sqlserver_server//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_configuration_lib",
+    library_name = "Microsoft.Extensions.Configuration",
+    libs = ["@ms_extensions_configuration//:libs"],
+    refs = ["@ms_extensions_configuration//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_configuration_abstractions_lib",
+    library_name = "Microsoft.Extensions.Configuration.Abstractions",
+    libs = ["@ms_extensions_configuration_abstractions//:libs"],
+    refs = ["@ms_extensions_configuration_abstractions//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_configuration_binder_lib",
+    library_name = "Microsoft.Extensions.Configuration.Binder",
+    libs = ["@ms_extensions_configuration_binder//:libs"],
+    refs = ["@ms_extensions_configuration_binder//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_dependency_injection_lib",
+    library_name = "Microsoft.Extensions.DependencyInjection",
+    libs = ["@ms_extensions_dependency_injection//:libs"],
+    refs = ["@ms_extensions_dependency_injection//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_dependency_injection_abstractions_lib",
+    library_name = "Microsoft.Extensions.DependencyInjection.Abstractions",
+    libs = ["@ms_extensions_dependency_injection_abstractions//:libs"],
+    refs = ["@ms_extensions_dependency_injection_abstractions//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_hosting_lib",
+    library_name = "Microsoft.Extensions.Hosting",
+    libs = ["@ms_extensions_hosting//:libs"],
+    refs = ["@ms_extensions_hosting//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_hosting_abstractions_lib",
+    library_name = "Microsoft.Extensions.Hosting.Abstractions",
+    libs = ["@ms_extensions_hosting_abstractions//:libs"],
+    refs = ["@ms_extensions_hosting_abstractions//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_extensions_http_lib",
+    library_name = "Microsoft.Extensions.Http",
+    libs = ["@ms_extensions_http//:libs"],
+    refs = ["@ms_extensions_http//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "temporalio_lib",
+    library_name = "Temporalio",
+    libs = ["@temporalio//:libs"],
+    refs = ["@temporalio//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "google_protobuf_lib",
+    library_name = "Google.Protobuf",
+    libs = ["@google_protobuf//:libs"],
+    refs = ["@google_protobuf//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "nexus_rpc_lib",
+    library_name = "NexusRpc",
+    libs = ["@nexus_rpc//:libs"],
+    refs = ["@nexus_rpc//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_aspnetcore_app_ref_lib",
+    library_name = "Microsoft.AspNetCore.App.Ref",
+    libs = ["@ms_aspnetcore_app_ref//:libs"],
+    refs = ["@ms_aspnetcore_app_ref//:refs"],
+    tags = ["manual"],
+)
+
+import_library(
+    name = "ms_netcore_app_ref_lib",
+    library_name = "Microsoft.NETCore.App.Ref",
+    libs = ["@ms_netcore_app_ref//:libs"],
+    refs = ["@ms_netcore_app_ref//:refs"],
+    tags = ["manual"],
+)
 
 filegroup(
     name = "instrument_reading_db_schema",
@@ -13,6 +378,12 @@ filegroup(
 filegroup(
     name = "validation_db_schema",
     srcs = ["resources/validation_db_schema.sql"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "weather_db_schema",
+    srcs = ["resources/weather_db_schema.sql"],
     visibility = ["//visibility:public"],
 )
 
@@ -49,6 +420,7 @@ java_library(
     deps = [
         "//arena-junit:arena_junit_lib",
         "@arena_java_maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@arena_java_maven//:net_java_dev_jna_jna",
     ],
 )
 
@@ -64,6 +436,7 @@ exports_files(
     [
         "requirements.txt",
         "requirements_lock.txt",
+        "requirements_windows.txt",
     ],
     visibility = ["//visibility:public"],
 )
@@ -72,7 +445,8 @@ compile_pip_requirements(
     name = "pip_requirements",
     src = "requirements.txt",
     requirements_txt = "requirements_lock.txt",
-    generate_hashes = False,
+    requirements_windows = "requirements_windows.txt",
+    generate_hashes = True,
 )
 
 py_library(
@@ -96,6 +470,7 @@ py_library(
         ":arena_config_py",
         "//arena-pytest:arena_pytest_lib",
         "@pip//requests",
+        "@pip_examples//fastmssql",
     ],
     visibility = ["//visibility:public"],
 )
@@ -112,6 +487,7 @@ py_library(
         "@pip_examples//boto3",
         "@pip_examples//fastapi",
         "@pip_examples//httpx",
+        "@pip_examples//oracledb",
         "@pip_examples//pydantic_settings",
         "@pip_examples//pyjwt",
         "@pip_examples//fastmssql",
@@ -241,6 +617,7 @@ py_test(
         "//examples:instrument_reading_db_schema",
         "//examples:arena_config",
         "//examples:validation_db_schema",
+        "//examples:weather_db_schema",
     ],
     deps = [
         ":pytest_shared",
@@ -249,6 +626,40 @@ py_test(
         "@pip//pytest_asyncio",
         "@pip//requests",
         "@pip_examples//boto3",
+        "@pip_examples//fastmssql",
+    ],
+    tags = [
+        "component_test",
+        "example_component",
+    ],
+    python_version = "PY3",
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "pytest_fastapi_chained_component_test",
+    size = "medium",
+    srcs = glob(["tests/example-fastapi-pytest-chained-component-test/**/*.py"]),
+    main = "tests/example-fastapi-pytest-chained-component-test/fastapi_chained_component_test.py",
+    imports = [
+        "tests/example-fastapi-pytest-chained-component-test",
+        "tests/pytest-shared",
+    ],
+    data = [
+        "//arena-ffi:arena_ffi_shared",
+        "//examples:example-readings-fastapi-web-app",
+        "//examples:instrument_reading_db_schema",
+        "//examples:arena_config",
+        "//examples:validation_db_schema",
+        "//examples:weather_db_schema",
+    ],
+    deps = [
+        ":pytest_shared",
+        "//arena-pytest:arena_pytest_lib",
+        "@pip//pytest",
+        "@pip//pytest_asyncio",
+        "@pip//requests",
+        "@pip_examples//fastmssql",
     ],
     tags = [
         "component_test",
@@ -310,11 +721,13 @@ java_library(
         "@arena_java_maven//:com_fasterxml_jackson_core_jackson_core",
         "@arena_java_maven//:com_fasterxml_jackson_core_jackson_databind",
         "@arena_java_maven//:com_microsoft_sqlserver_mssql_jdbc",
+        "@arena_java_maven//:com_oracle_database_jdbc_ojdbc11",
         "@arena_java_maven//:jakarta_validation_jakarta_validation_api",
         "@arena_java_maven//:org_postgresql_postgresql",
         "@arena_java_maven//:org_springframework_boot_spring_boot",
         "@arena_java_maven//:org_springframework_boot_spring_boot_autoconfigure",
         "@arena_java_maven//:org_springframework_boot_spring_boot_starter_jdbc",
+        "@arena_java_maven//:org_springframework_boot_spring_boot_starter_mail",
         "@arena_java_maven//:org_springframework_boot_spring_boot_starter_oauth2_resource_server",
         "@arena_java_maven//:org_springframework_boot_spring_boot_starter_validation",
         "@arena_java_maven//:org_springframework_boot_spring_boot_starter_web",
@@ -326,6 +739,7 @@ java_library(
         "@arena_java_maven//:org_springframework_security_spring_security_web",
         "@arena_java_maven//:org_springframework_spring_beans",
         "@arena_java_maven//:org_springframework_spring_context",
+        "@arena_java_maven//:org_springframework_spring_context_support",
         "@arena_java_maven//:org_springframework_spring_jdbc",
         "@arena_java_maven//:org_springframework_spring_web",
         "@arena_java_maven//:software_amazon_awssdk_auth",
@@ -371,15 +785,15 @@ java_test(
     use_testrunner = False,
     main_class = "org.junit.platform.console.ConsoleLauncher",
     args = [
-        "--include-engine=junit-jupiter",
-        "--select-package=arena.examples.component",
+        "--include-engine=junit-platform-suite",
+        "--select-class=arena.examples.component.ComponentTestSuite",
     ],
     data = [
         ":example-readings-spring-boot-web-app",
         "//arena-ffi:arena_ffi_shared",
         ":instrument_reading_db_schema",
-        ":arena_config",
         ":validation_db_schema",
+        ":weather_db_schema",
     ],
     jvm_flags = ["-Djna.nosys=true"],
     runtime_deps = [
@@ -387,6 +801,58 @@ java_test(
         "@arena_java_maven//:org_junit_jupiter_junit_jupiter_engine",
         "@arena_java_maven//:org_junit_platform_junit_platform_console",
         "@arena_java_maven//:org_junit_platform_junit_platform_launcher",
+        "@arena_java_maven//:org_junit_platform_junit_platform_suite_engine",
+    ],
+    deps = [
+        ":ephemeral_test_runtime_java",
+        ":junit_shared",
+        "//arena-junit:arena_junit_lib",
+        "@arena_java_maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@arena_java_maven//:com_microsoft_sqlserver_mssql_jdbc",
+        "@arena_java_maven//:org_junit_jupiter_junit_jupiter_api",
+        "@arena_java_maven//:org_junit_platform_junit_platform_suite_api",
+        "@arena_java_maven//:org_slf4j_slf4j_api",
+        "@arena_java_maven//:org_springframework_boot_spring_boot_starter_logging",
+        "@arena_java_maven//:software_amazon_awssdk_auth",
+        "@arena_java_maven//:software_amazon_awssdk_regions",
+        "@arena_java_maven//:software_amazon_awssdk_sqs",
+        "@arena_java_maven//:software_amazon_awssdk_url_connection_client",
+    ],
+)
+
+java_test(
+    name = "example-spring-boot-chained-component-test",
+    size = "medium",
+    srcs = glob(["tests/example-spring-boot-chained-component-test/**/*.java"]),
+    javacopts = [
+        "--release",
+        "25",
+    ],
+    tags = [
+        "component_test",
+        "example_component",
+    ],
+    use_testrunner = False,
+    main_class = "org.junit.platform.console.ConsoleLauncher",
+    args = [
+        "--include-engine=junit-platform-suite",
+        "--select-class=arena.examples.component.ChainedComponentTestSuite",
+    ],
+    data = [
+        ":example-readings-spring-boot-web-app",
+        "//arena-ffi:arena_ffi_shared",
+        ":instrument_reading_db_schema",
+        ":validation_db_schema",
+        ":weather_db_schema",
+    ],
+    jvm_flags = ["-Djna.nosys=true"],
+    runtime_deps = [
+        ":example_spring_boot_component_test_logging_resources",
+        "@arena_java_maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@arena_java_maven//:org_junit_platform_junit_platform_console",
+        "@arena_java_maven//:org_junit_platform_junit_platform_launcher",
+        "@arena_java_maven//:org_junit_platform_junit_platform_suite_engine",
+        "@arena_java_maven//:org_springframework_boot_spring_boot_starter_logging",
     ],
     deps = [
         ":ephemeral_test_runtime_java",
@@ -394,12 +860,8 @@ java_test(
         "//arena-junit:arena_junit_lib",
         "@arena_java_maven//:com_fasterxml_jackson_core_jackson_databind",
         "@arena_java_maven//:org_junit_jupiter_junit_jupiter_api",
+        "@arena_java_maven//:org_junit_platform_junit_platform_suite_api",
         "@arena_java_maven//:org_slf4j_slf4j_api",
-        "@arena_java_maven//:org_springframework_boot_spring_boot_starter_logging",
-        "@arena_java_maven//:software_amazon_awssdk_auth",
-        "@arena_java_maven//:software_amazon_awssdk_regions",
-        "@arena_java_maven//:software_amazon_awssdk_sqs",
-        "@arena_java_maven//:software_amazon_awssdk_url_connection_client",
     ],
 )
 
@@ -418,14 +880,13 @@ java_test(
     use_testrunner = False,
     main_class = "org.junit.platform.console.ConsoleLauncher",
     args = [
-        "--include-engine=junit-jupiter",
-        "--select-package=arena.examples.component",
+        "--include-engine=junit-platform-suite",
+        "--select-class=arena.examples.component.ComponentTestSuite",
     ],
     data = [
         ":example-readings-axum-web-app",
         "//arena-ffi:arena_ffi_shared",
         ":instrument_reading_db_schema",
-        ":arena_config",
         ":validation_db_schema",
     ],
     jvm_flags = ["-Djna.nosys=true"],
@@ -433,16 +894,200 @@ java_test(
         "@arena_java_maven//:org_junit_jupiter_junit_jupiter_engine",
         "@arena_java_maven//:org_junit_platform_junit_platform_console",
         "@arena_java_maven//:org_junit_platform_junit_platform_launcher",
+        "@arena_java_maven//:org_junit_platform_junit_platform_suite_engine",
     ],
     deps = [
         ":ephemeral_test_runtime_java",
         ":junit_shared",
         "//arena-junit:arena_junit_lib",
         "@arena_java_maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@arena_java_maven//:com_microsoft_sqlserver_mssql_jdbc",
         "@arena_java_maven//:org_apache_kafka_kafka_clients",
         "@arena_java_maven//:org_junit_jupiter_junit_jupiter_api",
+        "@arena_java_maven//:org_junit_platform_junit_platform_suite_api",
         "@arena_java_maven//:org_slf4j_slf4j_api",
     ],
+)
+
+csharp_library(
+    name = "xunit_shared",
+    target_frameworks = ["net8.0"],
+    srcs = glob(["tests/xunit-shared/**/*.cs"]),
+    deps = [
+        "//arena-xunit:arena_xunit_lib",
+        ":xunit_assert_lib",
+        ":xunit_abstractions_lib",
+        ":xunit_extensibility_lib",
+        ":aws_sqs_lib",
+        ":aws_core_lib",
+        ":polly_lib",
+        ":polly_core_lib",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+csharp_library(
+    name = "ephemeral_test_runtime_dotnet",
+    target_frameworks = ["net8.0"],
+    srcs = ["tests/xunit-shared/EphemeralTestRuntime.cs"],
+    visibility = ["//visibility:public"],
+)
+
+csharp_library(
+    name = "example_readings_aspnet_web_app_lib",
+    target_frameworks = ["net8.0"],
+    nullable = "enable",
+    srcs = glob(
+        ["src/example_readings_aspnet_web_app/**/*.cs"],
+        exclude = ["src/example_readings_aspnet_web_app/Program.cs"],
+    ),
+    deps = [
+        ":xunit_shared",
+        "//arena-xunit:arena_xunit_lib",
+        ":newtonsoft_json_lib",
+        ":npgsql_lib",
+        ":sqlclient_lib",
+        ":oracle_manageddataaccess_core_lib",
+        ":aws_core_lib",
+        ":aws_eventbridge_lib",
+        ":aws_sqs_lib",
+        ":ms_identitymodel_tokens_lib",
+        ":ms_identitymodel_jsonwebtokens_lib",
+        ":ms_identitymodel_logging_lib",
+        ":ms_identitymodel_abstractions_lib",
+        ":system_configuration_configurationmanager_lib",
+        ":ms_identity_client_lib",
+        ":ms_sqlserver_server_lib",
+        ":jwt_lib",
+        ":ms_logging_abstractions_lib",
+        ":ms_aspnetcore_app_ref_lib",
+        ":ms_netcore_app_ref_lib",
+        ":ms_extensions_configuration_lib",
+        ":ms_extensions_configuration_abstractions_lib",
+        ":ms_extensions_configuration_binder_lib",
+        ":ms_extensions_dependency_injection_lib",
+        ":ms_extensions_dependency_injection_abstractions_lib",
+        ":ms_extensions_hosting_lib",
+        ":ms_extensions_hosting_abstractions_lib",
+        ":ms_extensions_http_lib",
+        ":temporalio_lib",
+        ":google_protobuf_lib",
+        ":nexus_rpc_lib",
+        ":polly_lib",
+        ":polly_core_lib",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+csharp_binary(
+    name = "example-readings-aspnet-web-app",
+    target_frameworks = ["net8.0"],
+    project_sdk = "web",
+    nullable = "enable",
+    srcs = ["src/example_readings_aspnet_web_app/Program.cs"],
+    appsetting_files = ["src/example_readings_aspnet_web_app/appsettings.json"],
+    data = ["@temporalio//:runtimes/linux-x64/native/libtemporalio_sdk_core_c_bridge.so"],
+    deps = [
+        ":example_readings_aspnet_web_app_lib",
+        ":temporalio_lib",
+        ":google_protobuf_lib",
+        ":nexus_rpc_lib",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+csharp_test(
+    name = "example-aspnet-xunit-component-test",
+    size = "medium",
+    tags = [
+        "component_test",
+        "example_component",
+    ],
+    target_frameworks = ["net8.0"],
+    srcs = glob(["tests/example-aspnet-xunit-component-test/**/*.cs"]),
+    data = [
+        ":example-readings-aspnet-web-app",
+        "//arena-ffi:arena_ffi_shared",
+        ":instrument_reading_db_schema",
+        ":arena_config",
+        ":validation_db_schema",
+        ":weather_db_schema",
+        "//arena-xunit:xunit_core_netstandard",
+    ],
+    deps = [
+        ":xunit_shared",
+        ":xunit_assert_lib",
+        ":xunit_abstractions_lib",
+        ":xunit_extensibility_lib",
+        ":xunit_extensibility_core_lib",
+        ":xunit_runner_utility_lib",
+        ":xunit_runner_reporters_lib",
+        ":example_readings_aspnet_web_app_lib",
+        "//arena-xunit:arena_xunit_lib",
+        ":aws_sqs_lib",
+        ":aws_core_lib",
+        ":polly_lib",
+        ":ms_logging_abstractions_lib",
+        ":ms_logging_lib",
+        ":ms_logging_console_lib",
+        ":ms_logging_options_lib",
+        ":ms_logging_options_configuration_extensions_lib",
+        ":ms_logging_configuration_lib",
+        ":ms_extensions_configuration_lib",
+        ":ms_extensions_configuration_abstractions_lib",
+        ":ms_extensions_configuration_binder_lib",
+        ":ms_extensions_dependency_injection_abstractions_lib",
+        ":ms_extensions_primitives_lib",
+        "//tools/dotnet_xunit_runner:xunit_console_runner",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+csharp_test(
+    name = "example-aspnet-xunit-chained-component-test",
+    size = "medium",
+    tags = [
+        "component_test",
+        "example_component",
+    ],
+    target_frameworks = ["net8.0"],
+    srcs = glob(["tests/example-aspnet-xunit-chained-component-test/**/*.cs"]),
+    data = [
+        ":example-readings-aspnet-web-app",
+        "//arena-ffi:arena_ffi_shared",
+        ":instrument_reading_db_schema",
+        ":arena_config",
+        ":validation_db_schema",
+        ":weather_db_schema",
+        "//arena-xunit:xunit_core_netstandard",
+    ],
+    deps = [
+        ":xunit_shared",
+        ":xunit_assert_lib",
+        ":xunit_abstractions_lib",
+        ":xunit_extensibility_lib",
+        ":xunit_extensibility_core_lib",
+        ":xunit_runner_utility_lib",
+        ":xunit_runner_reporters_lib",
+        ":example_readings_aspnet_web_app_lib",
+        "//arena-xunit:arena_xunit_lib",
+        ":aws_sqs_lib",
+        ":aws_core_lib",
+        ":polly_lib",
+        ":ms_logging_abstractions_lib",
+        ":ms_logging_lib",
+        ":ms_logging_console_lib",
+        ":ms_logging_options_lib",
+        ":ms_logging_options_configuration_extensions_lib",
+        ":ms_logging_configuration_lib",
+        ":ms_extensions_configuration_lib",
+        ":ms_extensions_configuration_abstractions_lib",
+        ":ms_extensions_configuration_binder_lib",
+        ":ms_extensions_dependency_injection_abstractions_lib",
+        ":ms_extensions_primitives_lib",
+        "//tools/dotnet_xunit_runner:xunit_console_runner",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 test_suite(
@@ -451,9 +1096,13 @@ test_suite(
     tests = [
         ":pytest_axum_component_test",
         ":pytest_fastapi_component_test",
+        ":pytest_fastapi_chained_component_test",
         ":example-axum-component-test",
         ":example-axum-junit-component-test",
         ":example-spring-boot-component-test",
+        ":example-spring-boot-chained-component-test",
+        ":example-aspnet-xunit-component-test",
+        ":example-aspnet-xunit-chained-component-test",
     ],
     visibility = ["//visibility:public"],
 )

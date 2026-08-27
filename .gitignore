@@ -18,3 +18,13 @@ venv/
 /bazel-arena
 /bazel-*
 /.bazelrc.user
+/arena-junit/prebuilt/
+/arena-pytest/prebuilt/
+
+/fuzz/target/
+
+/tools/benches/maven/target/
+/tools/benches/dotnet/bin/
+/tools/benches/dotnet/obj/
+
+/.claude/worktrees/
