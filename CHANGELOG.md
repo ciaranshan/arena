@@ -5,6 +5,30 @@ All notable changes to Arena will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.0.0]
+
+### Added
+
+- Arena lifecycle: a full state machine (`ArenaLifecycleState`, `RunnableState`) with recursive `Fault`s and an `ArenaState` snapshot covering every dependency, component, child and recorded fault
+- Lifecycle observation: `ClosedArena::observe` in Rust and `arena_add_lifecycle_observer` / `arena_remove_lifecycle_observer` / `arena_state_json` over the FFI, streaming one state document per transition
+- Python, Java and .NET clients: an `ArenaState` model, `ArenaLifecycleError` carrying the parsed state, a state accessor on the open arena, and identical lifecycle transition plus `closing summary` log lines
+- Guaranteed teardown: a graceful stop followed by an unconditional, idempotent forced stop over every subject (`force_stop`, `release`), plus container expiry so crashed runs are cleaned up
+- Object-namespaced logging: every line under `arena.<id>`, `arena.<id>.dependency.<id>` or `arena.<id>.component.<id>` with ` | ` separated fields
+
+### Changed
+
+- Every lifecycle API returns `Result` with `Fault`s instead of panicking: core dependency/component/playbook traits, open/close, resets, and the oauth, http, oracledb and executable-component builders
+- FFI: `arena_open` and `arena_close` hand back the arena state document; a faulted open or close surfaces as a typed lifecycle error in all three clients instead of panic text
+- Log output shape: `[arena::module]` prefixes removed, fields pipe separated, ids already in the logger namespace dropped from messages, durations rounded to three significant figures, default dispatcher logger renamed to `arena`
+- CI: the OracleDB component test runs in its own job on the Linux runners
+
+### Fixed
+
+- No exit path reports success while a subject may still be running: faults during parallel starts, stops, forced teardown, observers and drop are all recorded and teardown always completes
+- Panics no longer escape to client consoles; they are contained at the FFI boundary and recorded as faults in the arena state
+- Container name collisions from six-character identifier segments, non-invariant lowercasing, and double-free/finalizer races in the .NET client
+- `arena-oauth` hard reset teardown, TLS generation failures reported as faults, and the expired-container sweep throttled to once per module per minute
+
 ## [6.2.1]
 
 ### Changed

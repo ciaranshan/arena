@@ -17,13 +17,13 @@ fn init_test_logging() {
 }
 
 async fn start_oauth_https_default() -> OauthDependency {
-    let dep = OauthDependency::builder("oauth https flow").build();
+    let dep = OauthDependency::builder("oauth https flow").build().expect("build oauth dependency");
     assert!(
         dep.server_tls_certificate_pem().is_some(),
         "ephemeral oauth should expose server TLS certificate PEM before start"
     );
     let mut dep = dep;
-    dep.start().await;
+    dep.start().await.expect("start should succeed");
     dep
 }
 
@@ -113,14 +113,14 @@ async fn oauth_dependency_https_discovery_token_introspect_and_dependency_verify
 
     let pem_owned = pem.to_string();
 
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
     assert_eq!(
         dep.server_tls_certificate_pem(),
         Some(pem_owned.as_str()),
         "ephemeral TLS PEM must remain after stop() so clients keep the same trust anchor"
     );
 
-    dep.start().await;
+    dep.start().await.expect("start should succeed");
     assert_eq!(
         dep.server_tls_certificate_pem(),
         Some(pem_owned.as_str()),
@@ -144,18 +144,18 @@ async fn oauth_dependency_https_discovery_token_introspect_and_dependency_verify
         .await
         .expect("discovery JSON after restart");
 
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
 }
 
 #[tokio::test]
 async fn oauth_dependency_http_transport_serves_discovery_token_and_verifies_jwt() {
     init_test_logging();
-    let mut dep = OauthDependency::builder("oauth http flow").with_http().build();
+    let mut dep = OauthDependency::builder("oauth http flow").with_http().build().expect("build oauth dependency");
     assert!(
         dep.server_tls_certificate_pem().is_none(),
         "http transport should not expose any server TLS certificate PEM"
     );
-    dep.start().await;
+    dep.start().await.expect("start should succeed");
 
     let base = dep
         .base_url()
@@ -205,7 +205,7 @@ async fn oauth_dependency_http_transport_serves_discovery_token_and_verifies_jwt
     dep.verify_access_token(access_token)
         .expect("dependency JWT verify");
 
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
 }
 
 #[tokio::test]
@@ -290,7 +290,7 @@ async fn oauth_dependency_issued_token_scope_claims_enforce_ensure_scopes() {
         "expected MissingScope, got {missing:?}"
     );
 
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
 }
 
 fn decoding_key_for(dep: &OauthDependency, provider: &Provider) -> jsonwebtoken::DecodingKey {
@@ -324,8 +324,8 @@ async fn oauth_dependency_with_cognito_and_okta_issuers_reproduces_mixed_topolog
         .with_http()
         .with_provider(cognito_provider.clone())
         .with_provider(okta_provider.clone())
-        .build();
-    dep.start().await;
+        .build().expect("build oauth dependency");
+    dep.start().await.expect("start should succeed");
 
     let base = dep
         .base_url()
@@ -462,7 +462,7 @@ async fn oauth_dependency_with_cognito_and_okta_issuers_reproduces_mixed_topolog
         .expect("forged introspect JSON");
     assert_eq!(forged_introspect["active"].as_bool(), Some(false));
 
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -534,8 +534,8 @@ async fn oauth_dependency_serves_jwks_and_verifiable_tokens_across_all_providers
             IssuerSource::Provider(provider) => builder.with_provider(provider),
             IssuerSource::Custom(config) => builder.with_issuer(config),
         };
-        let mut dep = builder.build();
-        dep.start().await;
+        let mut dep = builder.build().expect("build oauth dependency");
+        dep.start().await.expect("start should succeed");
 
         let base = dep
             .base_url()
@@ -578,7 +578,7 @@ async fn oauth_dependency_serves_jwks_and_verifiable_tokens_across_all_providers
         dep.verify_access_token(&token)
             .unwrap_or_else(|e| panic!("{}: verify_access_token: {e:?}", case.name));
 
-        dep.stop().await;
+        dep.stop().await.expect("stop should succeed");
     }
 }
 
@@ -590,14 +590,14 @@ async fn issuer_with_provider_as_sole_issuer_matches_issuer_for_its_provider() {
     let mut dep = OauthDependency::builder("oauth-builder-issuer-matches-issuer-at")
         .with_http()
         .with_provider(provider.clone())
-        .build();
-    dep.start().await;
+        .build().expect("build oauth dependency");
+    dep.start().await.expect("start should succeed");
     assert_eq!(dep.issuer(), dep.issuer_for(&provider));
     assert!(dep
         .issuer()
         .expect("issuer")
         .ends_with("/us-east-1_abc123"));
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
 }
 
 #[tokio::test]
@@ -605,8 +605,8 @@ async fn oauth_dependency_ipv6_loopback_listen_ip_serves_discovery_over_https() 
     init_test_logging();
     let mut dep = OauthDependency::builder("oauth-ipv6-loopback")
         .with_listen_ip(std::net::IpAddr::V6(std::net::Ipv6Addr::LOCALHOST))
-        .build();
-    dep.start().await;
+        .build().expect("build oauth dependency");
+    dep.start().await.expect("start should succeed");
 
     let base = dep.base_url().expect("base url").to_string();
     let pem = dep
@@ -629,7 +629,7 @@ async fn oauth_dependency_ipv6_loopback_listen_ip_serves_discovery_over_https() 
     );
     assert_eq!(discovery["issuer"].as_str(), Some(base.as_str()));
 
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
 }
 
 async fn fetch_access_token(client: &reqwest::Client, base: &str) -> String {
@@ -667,9 +667,9 @@ async fn fetch_access_token(client: &reqwest::Client, base: &str) -> String {
 
 #[tokio::test]
 async fn http_transport_serves_and_verifies_tokens_without_tls() {
-    let mut dep = OauthDependency::builder("oauth-http").with_http().build();
+    let mut dep = OauthDependency::builder("oauth-http").with_http().build().expect("build oauth dependency");
 
-    dep.start().await;
+    dep.start().await.expect("start should succeed");
     assert!(dep.server_tls_certificate_pem().is_none());
 
     let base = dep
@@ -686,9 +686,9 @@ async fn http_transport_serves_and_verifies_tokens_without_tls() {
     dep.verify_access_token(&access_token)
         .expect("dependency JWT verify while running");
 
-    dep.soft_reset().await;
+    dep.soft_reset().await.expect("soft reset should succeed");
 
-    dep.hard_reset().await;
+    dep.hard_reset().await.expect("hard reset should succeed");
     let base_after_reset = dep
         .base_url()
         .expect("base_url after hard_reset")
@@ -698,7 +698,7 @@ async fn http_transport_serves_and_verifies_tokens_without_tls() {
     dep.verify_access_token(&access_token_after_reset)
         .expect("dependency JWT verify after hard_reset");
 
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
 
     let err = dep
         .verify_access_token(&access_token_after_reset)
@@ -712,9 +712,9 @@ async fn custom_pem_transport_exposes_provided_certificate() {
 
     let mut dep = OauthDependency::builder("oauth-custom-pem")
         .with_server_tls_pem(cert_pem.clone(), key_pem)
-        .build();
+        .build().expect("build oauth dependency");
 
-    dep.start().await;
+    dep.start().await.expect("start should succeed");
 
     assert_eq!(dep.server_tls_certificate_pem(), Some(cert_pem.as_str()));
     assert!(dep
@@ -722,5 +722,5 @@ async fn custom_pem_transport_exposes_provided_certificate() {
         .expect("base_url after start")
         .starts_with("https://"));
 
-    dep.stop().await;
+    dep.stop().await.expect("stop should succeed");
 }
